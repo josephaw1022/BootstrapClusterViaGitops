@@ -68,7 +68,7 @@ spec:
   syncPolicy:
     automated:
       prune: true
-      selfHeal: false
+      selfHeal: true
     retry:
       limit: 10
       backoff:
@@ -78,69 +78,3 @@ spec:
     syncOptions:
     - CreateNamespace=true
     - PrunePropagationPolicy=foreground
-
----
-
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: istio-ingress
-  namespace: argocd
-  finalizers:
-    - resources-finalizer.argocd.argoproj.io
-  annotations:
-    argocd.argoproj.io/sync-wave: "2"
-    argocd.argoproj.io/refresh: always
-spec:
-  project: default
-  source:
-    repoURL: https://istio-release.storage.googleapis.com/charts
-    chart: gateway
-    targetRevision: 1.23.2
-    helm:
-      releaseName: istio-ingress
-      values: |
-        podAnnotations:
-          prometheus.io/port: "15020"
-          prometheus.io/scrape: "true"
-          prometheus.io/path: "/stats/prometheus"
-          inject.istio.io/templates: "gateway"
-          sidecar.istio.io/inject: "true"
-
-
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: istio-ingress
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: false
-    retry:
-      limit: 1
-      backoff:
-        duration: 5s
-        factor: 2
-        maxDuration: 20s
-    managedNamespaceMetadata:
-      labels:
-        istio-injection: enabled
-    syncOptions:
-    - CreateNamespace=true
-    - PrunePropagationPolicy=foreground
-    - RespectIgnoreDifferences=true
-  ignoreDifferences:
-    - group: apps
-      kind: Deployment
-      name: istio-ingress
-    - group: ""
-      kind: Pod
-      name: "*"  
-      namespace: istio-ingress
-  health:
-    customizations:
-      apps/Deployment:
-        istio-ingress:
-          ignore: true
-      v1/Pod:
-        istio-ingress:
-          ignore: true
