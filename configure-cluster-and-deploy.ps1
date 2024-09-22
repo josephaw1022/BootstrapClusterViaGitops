@@ -39,7 +39,7 @@ helm upgrade --install bootstrap ./BootstrapCluster -n bootstrap-cluster --creat
 
 # Wait a bit for the bootstrap to complete
 Write-Output "Sleep for a bit to let the bootstrap settle"
-Start-Sleep -Seconds 30
+Start-Sleep -Seconds 60
 
 
 # Install the Test Helm Chart
