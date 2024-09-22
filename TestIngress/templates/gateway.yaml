@@ -1,5 +1,4 @@
 ---
-
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -9,9 +8,8 @@ spec:
   parentRefs:
   - name: traefik-gateway
     namespace: traefik
-    sectionName: http
   hostnames:
-  - localhost
+  - "localhost"
   rules:
   - matches:
     - path:
@@ -20,4 +18,3 @@ spec:
     backendRefs:
     - name: nginx-service
       port: 80
-
