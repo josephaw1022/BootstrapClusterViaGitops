@@ -37,6 +37,8 @@ spec:
             ingressClass: traefik
           kubernetesIngress:
             ingressClass: traefik
+        gateway:
+          namespacePolicy: All
         ingressRoute:
           dashboard:
             enabled: true
