@@ -39,7 +39,9 @@ spec:
             enabled: false
             ingressClass: traefik
         gateway:
-          namespacePolicy: All
+          listeners:
+            web:
+              namespacePolicy: All
         ingressRoute:
           dashboard:
             enabled: true
