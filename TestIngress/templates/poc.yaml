@@ -51,9 +51,9 @@ metadata:
   name: traefik-ingress
   namespace: nginx-test
   annotations:
-    traefik.ingress.kubernetes.io/router.entrypoints: web  # Use the Traefik web entry point
+    traefik.ingress.kubernetes.io/router.entrypoints: web
 spec:
-  ingressClassName: traefik  # Define the ingress class as Traefik
+  ingressClassName: traefik
   rules:
   - http:
       paths:
@@ -61,6 +61,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: nginx-service  # The Nginx service
+            name: nginx-service
             port:
               number: 80

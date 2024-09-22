@@ -13,42 +13,33 @@ spec:
   source:
     repoURL: https://traefik.github.io/charts
     chart: traefik
-    targetRevision: 31.1.0
+    targetRevision: 31.1.1
     helm:
       releaseName: traefik
       values: |
         image:
-            name: traefik
-            pullPolicy: IfNotPresent
+          name: traefik
+          pullPolicy: IfNotPresent
         service: 
           type: NodePort
         ports:
-            web:
-                nodePort: 30000
-            websecure:
-                nodePort: 30001
+          web:
+            nodePort: 30000
+          websecure:
+            nodePort: 30001
         nodeSelector:
-            ingress-ready: "true"
+          ingress-ready: "true"
         tolerations:
-            - key: node-role.kubernetes.io/master
-                operator: Equal
-                effect: NoSchedule
-
-            
-        
+          - key: "node-role.kubernetes.io/master"
+            operator: "Equal"
+            effect: "NoSchedule"
         providers:
           kubernetesGateway:
             enabled: true
-        
-        ingressClass:
-          name: traefik
-        
-        providers:
           kubernetesCRD:
             ingressClass: traefik
           kubernetesIngress:
             ingressClass: traefik
-        
         ingressRoute:
           dashboard:
             enabled: true
@@ -64,7 +55,7 @@ spec:
       backoff:
         duration: 5s
         factor: 2
-        maxDuration: 1m
+        maxDuration: 3m
     syncOptions:
     - CreateNamespace=true
     - PrunePropagationPolicy=foreground
