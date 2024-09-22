@@ -35,3 +35,13 @@ Start-Sleep -Seconds 20
 
 # Install the Bootstrap Helm Chart
 helm upgrade --install bootstrap ./BootstrapCluster -n bootstrap-cluster --create-namespace
+
+
+# Wait a bit for the bootstrap to complete
+Write-Output "Sleep for a bit to let the bootstrap settle"
+Start-Sleep -Seconds 30
+
+
+# Install the Test Helm Chart
+Write-Output "Installing the Test Helm Chart"
+helm upgrade --install test-ingress ./TestIngress
