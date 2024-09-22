@@ -1,3 +1,6 @@
+# Sleep for a bit to let you potentially cancel the script if you need to
+Start-Sleep -Seconds 10
+
 # Delete the kind cluster if it exists
 kind delete cluster --name localkindcluster
 
