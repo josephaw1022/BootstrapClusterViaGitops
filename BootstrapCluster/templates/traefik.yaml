@@ -17,9 +17,6 @@ spec:
     helm:
       releaseName: traefik
       values: |
-        image:
-          name: traefik
-          pullPolicy: IfNotPresent
         service: 
           type: NodePort
         ports:
