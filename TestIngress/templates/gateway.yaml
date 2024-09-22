@@ -29,7 +29,7 @@ spec:
     namespace: nginx-test
     sectionName: http
   hostnames:
-  - "first-http-route.127.0.0.1.sslip.io"
+  - "first-http-route.localhost.sslip.io"
   rules:
   - matches:
     - path:
