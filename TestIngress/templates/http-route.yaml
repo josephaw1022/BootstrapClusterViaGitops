@@ -9,7 +9,7 @@ spec:
   - name: traefik-gateway
     namespace: traefik
   hostnames:
-  - "localhost"
+  - "nginx.localhost"
   rules:
   - matches:
     - path:
