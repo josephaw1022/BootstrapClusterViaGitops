@@ -36,7 +36,6 @@ spec:
           kubernetesCRD:
             ingressClass: traefik
           kubernetesIngress:
-            enabled: false
             ingressClass: traefik
         gateway:
           listeners:
@@ -44,7 +43,7 @@ spec:
               namespacePolicy: All
         ingressRoute:
           dashboard:
-            enabled: false
+            enabled: true
         experimental:
           kubernetesGateway:
             enabled: true
