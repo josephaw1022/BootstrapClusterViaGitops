@@ -48,3 +48,15 @@ Start-Sleep -Seconds 60
 # Install the Test Helm Chart
 Write-Output "Installing the Test Helm Chart"
 helm upgrade --install test-ingress ./TestIngress
+
+
+# Wait a bit for the test-ingress to complete
+Write-Output "Sleep for a bit to let the test-ingress settle"
+Start-Sleep -Seconds 30
+
+# Create a auth token for Headlamp
+kubectl create token my-headlamp -n kube-system
+
+# Open up the browser to the ArgoCD UI and Headlamp
+Start-Process "http://localhost:30080"
+Start-Process "http://headlamp.localhost"
