@@ -301,14 +301,17 @@ apps:
       values:
         ingress:
           enabled: true
-          ingressClassName: traefik
+          className: traefik
           annotations:
             traefik.ingress.kubernetes.io/router.entrypoints: web, websecure
           hosts:
           - host: helm-dashboard.localhost
             paths:
             - path: /
-              pathType: ImplementationSpecific
+              pathType: Prefix
+        service:
+          type: ClusterIP
+          port: 80
     syncPolicy:
       automated:
         selfHeal: true
