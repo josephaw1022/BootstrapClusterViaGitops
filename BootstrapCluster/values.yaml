@@ -6,7 +6,7 @@ apps:
       name: cert-manager
       namespace: argocd
       finalizers:
-        - resources-finalizer.argocd.argoproj.io
+      - resources-finalizer.argocd.argoproj.io
       annotations:
         argocd.argoproj.io/sync-wave: "0"
         argocd.argoproj.io/refresh: always
@@ -30,8 +30,8 @@ apps:
           factor: 2
           maxDuration: 1m
       syncOptions:
-        - CreateNamespace=true
-        - PrunePropagationPolicy=foreground
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
 
   istio-system:
     enabled: true
@@ -40,7 +40,7 @@ apps:
       name: istio-base
       namespace: argocd
       finalizers:
-        - resources-finalizer.argocd.argoproj.io
+      - resources-finalizer.argocd.argoproj.io
       annotations:
         argocd.argoproj.io/sync-wave: "0"
         argocd.argoproj.io/refresh: always
@@ -63,12 +63,12 @@ apps:
           factor: 2
           maxDuration: 10m
       syncOptions:
-        - CreateNamespace=true
-        - PrunePropagationPolicy=foreground
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
       ignoreDifferences:
-        - group: admissionregistration.k8s.io
-          kind: ValidatingWebhookConfiguration
-          name: istiod-default-validator
+      - group: admissionregistration.k8s.io
+        kind: ValidatingWebhookConfiguration
+        name: istiod-default-validator
 
   istiod:
     enabled: true
@@ -77,7 +77,7 @@ apps:
       name: istiod
       namespace: argocd
       finalizers:
-        - resources-finalizer.argocd.argoproj.io
+      - resources-finalizer.argocd.argoproj.io
       annotations:
         argocd.argoproj.io/sync-wave: "1"
         argocd.argoproj.io/refresh: always
@@ -99,8 +99,8 @@ apps:
           factor: 2
           maxDuration: 10m
       syncOptions:
-        - CreateNamespace=true
-        - PrunePropagationPolicy=foreground
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
 
   jaeger:
     enabled: true
@@ -109,7 +109,7 @@ apps:
       name: jaeger
       namespace: argocd
       finalizers:
-        - resources-finalizer.argocd.argoproj.io
+      - resources-finalizer.argocd.argoproj.io
       annotations:
         argocd.argoproj.io/sync-wave: "2"
         argocd.argoproj.io/refresh: always
@@ -143,8 +143,8 @@ apps:
           factor: 2
           maxDuration: 3m
       syncOptions:
-        - CreateNamespace=true
-        - PrunePropagationPolicy=foreground
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
 
   kiali-operator:
     enabled: true
@@ -153,7 +153,7 @@ apps:
       name: kiali-operator
       namespace: argocd
       finalizers:
-        - resources-finalizer.argocd.argoproj.io
+      - resources-finalizer.argocd.argoproj.io
       annotations:
         argocd.argoproj.io/sync-wave: "2"
         argocd.argoproj.io/refresh: always
@@ -183,8 +183,8 @@ apps:
           factor: 2
           maxDuration: 5m
       syncOptions:
-        - CreateNamespace=true
-        - PrunePropagationPolicy=foreground
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
 
   prometheus:
     enabled: true
@@ -195,7 +195,7 @@ apps:
       annotations:
         argocd.argoproj.io/sync-wave: "1"
       finalizers:
-        - resources-finalizer.argocd.argoproj.io
+      - resources-finalizer.argocd.argoproj.io
     project: default
     repoURL: https://prometheus-community.github.io/helm-charts
     chart: prometheus
@@ -217,9 +217,9 @@ apps:
           factor: 2
           maxDuration: 5m
       syncOptions:
-        - CreateNamespace=true
-        - PrunePropagationPolicy=foreground
-        - RespectIgnoreDifferences=true
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - RespectIgnoreDifferences=true
 
   traefik:
     enabled: true
@@ -247,9 +247,9 @@ apps:
         nodeSelector:
           ingress-ready: "true"
         tolerations:
-          - key: "node-role.kubernetes.io/master"
-            operator: "Equal"
-            effect: "NoSchedule"
+        - key: "node-role.kubernetes.io/master"
+          operator: "Equal"
+          effect: "NoSchedule"
         providers:
           kubernetesGateway:
             enabled: true
@@ -278,5 +278,47 @@ apps:
           factor: 2
           maxDuration: 3m
       syncOptions:
-        - CreateNamespace=true
-        - PrunePropagationPolicy=foreground
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+
+  helm-dashboard:
+    enabled: true
+    namespace: helm-dashboard
+    metadata:
+      name: helm-dashboard
+      namespace: argocd
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "2"
+        argocd.argoproj.io/refresh: always
+    project: default
+    repoURL: https://helm-charts.komodor.io
+    chart: helm-dashboard
+    targetRevision: 0.1.10
+    helm:
+      releaseName: helm-dashboard
+      values:
+        ingress:
+          enabled: true
+          ingressClassName: traefik
+          annotations:
+            traefik.ingress.kubernetes.io/router.entrypoints: web, websecure
+          hosts:
+          - host: helm-dashboard.localhost
+            paths:
+            - path: /
+              pathType: ImplementationSpecific
+    syncPolicy:
+      automated:
+        selfHeal: true
+        prune: true
+      retry:
+        limit: 20
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 3m
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
