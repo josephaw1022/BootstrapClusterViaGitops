@@ -103,7 +103,7 @@ apps:
       - PrunePropagationPolicy=foreground
 
   jaeger:
-    enabled: true
+    enabled: false
     namespace: jaeger
     metadata:
       name: jaeger
@@ -147,7 +147,7 @@ apps:
       - PrunePropagationPolicy=foreground
 
   kiali-operator:
-    enabled: true
+    enabled: false
     namespace: kiali-operator
     metadata:
       name: kiali-operator
@@ -185,41 +185,6 @@ apps:
       syncOptions:
       - CreateNamespace=true
       - PrunePropagationPolicy=foreground
-
-  prometheus:
-    enabled: true
-    namespace: istio-system
-    metadata:
-      name: prometheus
-      namespace: argocd
-      annotations:
-        argocd.argoproj.io/sync-wave: "1"
-      finalizers:
-      - resources-finalizer.argocd.argoproj.io
-    project: default
-    repoURL: https://prometheus-community.github.io/helm-charts
-    chart: prometheus
-    targetRevision: 25.27.0
-    helm:
-      releaseName: prometheus
-      values:
-        server:
-          service:
-            type: ClusterIP
-    syncPolicy:
-      automated:
-        prune: true
-        selfHeal: true
-      retry:
-        limit: 5
-        backoff:
-          duration: 5s
-          factor: 2
-          maxDuration: 5m
-      syncOptions:
-      - CreateNamespace=true
-      - PrunePropagationPolicy=foreground
-      - RespectIgnoreDifferences=true
 
   traefik:
     enabled: true
