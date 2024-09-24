@@ -11,10 +11,10 @@ spec:
     repoURL: {{ $app.repoURL }}
     targetRevision: {{ $app.targetRevision }}
     {{- if $app.path }}
-    path: {{ $app.path }}  # Use the path if it's defined
+    path: {{ $app.path }}
     {{- end }}
     {{- if $app.chart }}
-    chart: {{ $app.chart }}  # Use the chart if it's defined
+    chart: {{ $app.chart }}
     {{- end }}
     helm:
       releaseName: {{ $app.helm.releaseName }}
