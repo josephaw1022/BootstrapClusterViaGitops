@@ -4,6 +4,9 @@ Start-Sleep -Seconds 10
 # Delete the kind cluster if it exists
 kind delete cluster --name localkindcluster
 
+# Sleep for a bit to let the cluster settle
+Start-Sleep -Seconds 5
+
 # Create the kind cluster
 kind create cluster --config ./kind-config.yaml
 
