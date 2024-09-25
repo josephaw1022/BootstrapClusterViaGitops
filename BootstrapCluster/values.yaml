@@ -333,12 +333,13 @@ apps:
       automated:
         prune: true
         selfHeal: true
+        allowEmpty: true
       retry:
-        limit: 100
+        limit: 2
         backoff:
           duration: 5s
           factor: 2
-          maxDuration: 10m
+          maxDuration: 30s
       syncOptions:
       - CreateNamespace=true
       - PrunePropagationPolicy=orphan
