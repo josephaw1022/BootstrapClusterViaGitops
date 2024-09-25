@@ -187,7 +187,7 @@ apps:
       - PrunePropagationPolicy=foreground
 
   traefik:
-    enabled: true
+    enabled: false
     namespace: traefik
     metadata:
       name: traefik
@@ -266,9 +266,7 @@ apps:
       values:
         ingress:
           enabled: true
-          className: traefik
-          annotations:
-            traefik.ingress.kubernetes.io/router.entrypoints: web, websecure
+          className: istio
           hosts:
           - host: helm-dashboard.localhost
             paths:
@@ -287,6 +285,90 @@ apps:
           duration: 5s
           factor: 2
           maxDuration: 3m
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+
+
+  istiod-ingress:
+    enabled: true
+    namespace: istio-ingress
+    metadata:
+      name: istio-ingress
+      namespace: argocd
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "1"
+        argocd.argoproj.io/refresh: always
+    project: default
+    repoURL: https://istio-release.storage.googleapis.com/charts
+    chart: gateway
+    targetRevision: 1.23.2
+    helm:
+      releaseName: istio-ingress
+      values:
+        autoscaling:
+          enabled: false
+        service:
+          type: LoadBalancer
+          allocateLoadBalancerNodePorts: false
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      retry:
+        limit: 100
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 10m
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+    extraSpecs:
+      orphanedResources:
+        ignore:
+        - kind: Deployment
+          name: istiod-ingress
+
+
+  metrics-server:
+    enabled: true
+    namespace: kube-system
+    metadata:
+      name: metrics-server
+      namespace: argocd
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "0"
+        argocd.argoproj.io/refresh: always
+    project: default
+    repoURL: https://kubernetes-sigs.github.io/metrics-server
+    chart: metrics-server
+    targetRevision: 3.12.1
+    helm:
+      releaseName: metrics-server
+      values:
+        args:
+        - --kubelet-insecure-tls
+        service:
+          type: NodePort
+        resources:
+          limits:
+            cpu: 200m
+            memory: 200Mi
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      retry:
+        limit: 10
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 10m
       syncOptions:
       - CreateNamespace=true
       - PrunePropagationPolicy=foreground
