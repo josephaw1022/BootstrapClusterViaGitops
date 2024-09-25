@@ -2,7 +2,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: kube-prometheus-stack-2
+  name: kube-prometheus-stack
   namespace: argocd
   annotations:
     argocd.argoproj.io/sync-wave: "3"
@@ -19,7 +19,7 @@ spec:
             enabled: true
   destination:
     server: https://kubernetes.default.svc
-    namespace: monitoring-2
+    namespace: monitoring
   syncPolicy:
     automated:
       prune: true
@@ -47,7 +47,7 @@ spec:
     targetRevision: HEAD
   destination:
     server: https://kubernetes.default.svc
-    namespace: monitoring-2
+    namespace: monitoring
   syncPolicy:
     automated:
       prune: true
