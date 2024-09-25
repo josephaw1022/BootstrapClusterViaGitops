@@ -92,15 +92,18 @@ apps:
       automated:
         prune: true
         selfHeal: true
-      retry:
-        limit: 10
-        backoff:
-          duration: 5s
-          factor: 2
-          maxDuration: 10m
       syncOptions:
       - CreateNamespace=true
       - PrunePropagationPolicy=foreground
+      - ApplyOutOfSyncOnly=true
+    extraSpecs:
+      ignoreDifferences:
+      - group: "admissionregistration.k8s.io"
+        kind: "ValidatingWebhookConfiguration"
+        name: "istio-validator-istio-system"
+        jsonPointers:
+        - "/webhooks/0/failurePolicy"
+
 
   jaeger:
     enabled: false
@@ -217,7 +220,7 @@ apps:
           effect: "NoSchedule"
         providers:
           kubernetesGateway:
-            enabled: true
+            enabled: false
           kubernetesCRD:
             ingressClass: traefik
           kubernetesIngress:
@@ -228,10 +231,10 @@ apps:
               namespacePolicy: All
         ingressRoute:
           dashboard:
-            enabled: true
+            enabled: false
         experimental:
           kubernetesGateway:
-            enabled: true
+            enabled: false
     syncPolicy:
       automated:
         selfHeal: true
@@ -265,7 +268,7 @@ apps:
       releaseName: helm-dashboard
       values:
         ingress:
-          enabled: true
+          enabled: false
           className: istio
           hosts:
           - host: helm-dashboard.localhost
@@ -308,14 +311,25 @@ apps:
     helm:
       releaseName: istio-ingress
       values:
-        autoscaling:
-          enabled: false
         service:
-          type: LoadBalancer
-          allocateLoadBalancerNodePorts: false
+          externalTrafficPolicy: Local
+          ports:
+          - name: status-port
+            port: 15021
+            protocol: TCP
+            targetPort: 15021
+          - name: http2
+            port: 30000
+            protocol: TCP
+            targetPort: 80
+          - name: https
+            port: 30001
+            protocol: TCP
+            targetPort: 443
+          type: NodePort
     syncPolicy:
       automated:
-        prune: true
+        prune: false
         selfHeal: true
       retry:
         limit: 100
@@ -326,49 +340,16 @@ apps:
       syncOptions:
       - CreateNamespace=true
       - PrunePropagationPolicy=foreground
+      managedNamespaceMetadata:
+        labels:
+          istio-injection: enabled
     extraSpecs:
       orphanedResources:
+        warn: false
         ignore:
         - kind: Deployment
           name: istiod-ingress
 
 
-  metrics-server:
-    enabled: true
-    namespace: kube-system
-    metadata:
-      name: metrics-server
-      namespace: argocd
-      finalizers:
-      - resources-finalizer.argocd.argoproj.io
-      annotations:
-        argocd.argoproj.io/sync-wave: "0"
-        argocd.argoproj.io/refresh: always
-    project: default
-    repoURL: https://kubernetes-sigs.github.io/metrics-server
-    chart: metrics-server
-    targetRevision: 3.12.1
-    helm:
-      releaseName: metrics-server
-      values:
-        args:
-        - --kubelet-insecure-tls
-        service:
-          type: NodePort
-        resources:
-          limits:
-            cpu: 200m
-            memory: 200Mi
-    syncPolicy:
-      automated:
-        prune: true
-        selfHeal: true
-      retry:
-        limit: 10
-        backoff:
-          duration: 5s
-          factor: 2
-          maxDuration: 10m
-      syncOptions:
-      - CreateNamespace=true
-      - PrunePropagationPolicy=foreground
+
+

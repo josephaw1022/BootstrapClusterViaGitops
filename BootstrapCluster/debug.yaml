@@ -1,0 +1,9 @@
+
+
+
+apps:
+  kiali-operator:
+    enabled: false
+
+  traefik:
+    enabled: false
