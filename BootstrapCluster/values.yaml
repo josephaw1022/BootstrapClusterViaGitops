@@ -65,10 +65,12 @@ apps:
       syncOptions:
       - CreateNamespace=true
       - PrunePropagationPolicy=foreground
+      - RespectIgnoreDifferences=true
+    extraSpecs:
       ignoreDifferences:
-      - group: admissionregistration.k8s.io
-        kind: ValidatingWebhookConfiguration
-        name: istiod-default-validator
+      - kind: ValidatingWebhookConfiguration
+        jsonPointers:
+        - /webhooks/0/failurePolicy
 
   istiod:
     enabled: true
@@ -329,7 +331,7 @@ apps:
           type: NodePort
     syncPolicy:
       automated:
-        prune: false
+        prune: true
         selfHeal: true
       retry:
         limit: 100
@@ -339,7 +341,9 @@ apps:
           maxDuration: 10m
       syncOptions:
       - CreateNamespace=true
-      - PrunePropagationPolicy=foreground
+      - PrunePropagationPolicy=orphan
+      - ApplyOutOfSyncOnly=false
+      - Replace=true
       managedNamespaceMetadata:
         labels:
           istio-injection: enabled
