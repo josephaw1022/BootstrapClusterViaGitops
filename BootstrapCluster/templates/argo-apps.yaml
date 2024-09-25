@@ -27,5 +27,8 @@ spec:
     namespace: {{ $app.namespace }}
   syncPolicy:
     {{- toYaml $app.syncPolicy | nindent 4 }}
+  {{- if $app.extraSpecs }}
+    {{- toYaml $app.extraSpecs | nindent 2 }}
+  {{- end }}
   {{- end }}
 {{- end }}
