@@ -109,7 +109,7 @@ apps:
 
 
   jaeger:
-    enabled: false
+    enabled: true
     namespace: jaeger
     metadata:
       name: jaeger
@@ -135,7 +135,7 @@ apps:
         agent:
           enabled: false
         collector:
-          enabled: false
+          enabled: true
         query:
           enabled: true
     syncPolicy:
@@ -153,7 +153,7 @@ apps:
       - PrunePropagationPolicy=foreground
 
   kiali-operator:
-    enabled: false
+    enabled: true
     namespace: kiali-operator
     metadata:
       name: kiali-operator
@@ -176,8 +176,82 @@ apps:
           spec:
             auth:
               strategy: anonymous
+            external_services:
+              prometheus:
+                url: http://prometheus-istio-server:9090
         metrics:
+          enabled: true
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      retry:
+        limit: 10
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 5m
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+
+  kiali-prometheus-operator:
+    enabled: true
+    namespace: istio-system
+    metadata:
+      name: prometheus-istio
+      namespace: argocd
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "1"
+        argocd.argoproj.io/refresh: always
+    project: default
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: prometheus
+    targetRevision: 25.27.0
+    helm:
+      releaseName: prometheus-istio
+      values:
+        alertmanager:
           enabled: false
+        server:
+          service:
+            servicePort: 9090
+
+          global:
+            scrape_interval: 15s
+        prometheus.yml:
+          rule_files:
+          - /etc/config/recording_rules.yml
+          - /etc/config/alerting_rules.yml
+          scrape_configs:
+          # Scrape Prometheus
+          - job_name: prometheus
+            static_configs:
+            - targets:
+              - localhost:9090
+          - job_name: 'istiod'
+            # Scrape Istiod stats from istio-system namespace
+            kubernetes_sd_configs:
+            - role: endpoints
+              namespaces:
+                names:
+                - istio-system
+            relabel_configs:
+            - source_labels: [__meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+              action: keep
+              regex: istiod;http-monitoring
+          - job_name: 'envoy-stats'
+            # Scrape Envoy stats from sidecar and gateway proxies
+            metrics_path: /stats/prometheus
+            kubernetes_sd_configs:
+            - role: pod
+            relabel_configs:
+            - source_labels: [__meta_kubernetes_pod_container_port_name]
+              action: keep
+              regex: '.*-envoy-prom'
+
     syncPolicy:
       automated:
         prune: true
