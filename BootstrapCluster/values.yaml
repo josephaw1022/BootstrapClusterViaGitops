@@ -315,20 +315,23 @@ apps:
       values:
         service:
           externalTrafficPolicy: Local
+          type: NodePort
           ports:
           - name: status-port
             port: 15021
+            nodePort: 30003
             protocol: TCP
             targetPort: 15021
           - name: http2
-            port: 30000
+            port: 80
+            nodePort: 30000
             protocol: TCP
             targetPort: 80
           - name: https
-            port: 30001
+            nodePort: 30001
+            port: 443
             protocol: TCP
             targetPort: 443
-          type: NodePort
     syncPolicy:
       automated:
         prune: true
