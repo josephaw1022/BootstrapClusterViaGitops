@@ -42,7 +42,7 @@ apps:
       finalizers:
       - resources-finalizer.argocd.argoproj.io
       annotations:
-        argocd.argoproj.io/sync-wave: "0"
+        argocd.argoproj.io/sync-wave: "1"
         argocd.argoproj.io/refresh: always
     project: default
     repoURL: https://istio-release.storage.googleapis.com/charts
@@ -81,7 +81,7 @@ apps:
       finalizers:
       - resources-finalizer.argocd.argoproj.io
       annotations:
-        argocd.argoproj.io/sync-wave: "1"
+        argocd.argoproj.io/sync-wave: "2"
         argocd.argoproj.io/refresh: always
     project: default
     repoURL: https://istio-release.storage.googleapis.com/charts
@@ -116,7 +116,7 @@ apps:
       finalizers:
       - resources-finalizer.argocd.argoproj.io
       annotations:
-        argocd.argoproj.io/sync-wave: "2"
+        argocd.argoproj.io/sync-wave: "3"
         argocd.argoproj.io/refresh: always
     project: default
     repoURL: https://jaegertracing.github.io/helm-charts
@@ -160,7 +160,7 @@ apps:
       finalizers:
       - resources-finalizer.argocd.argoproj.io
       annotations:
-        argocd.argoproj.io/sync-wave: "2"
+        argocd.argoproj.io/sync-wave: "3"
         argocd.argoproj.io/refresh: always
     project: default
     repoURL: https://kiali.org/helm-charts
@@ -192,13 +192,13 @@ apps:
       - PrunePropagationPolicy=foreground
 
   traefik:
-    enabled: false
+    enabled: true
     namespace: traefik
     metadata:
       name: traefik
       namespace: argocd
       annotations:
-        argocd.argoproj.io/sync-wave: "1"
+        argocd.argoproj.io/sync-wave: "0"
         argocd.argoproj.io/refresh: always
     project: default
     repoURL: https://traefik.github.io/charts
@@ -271,7 +271,7 @@ apps:
       values:
         ingress:
           enabled: false
-          className: istio
+          className: traefik
           hosts:
           - host: helm-dashboard.localhost
             paths:
@@ -296,7 +296,7 @@ apps:
 
 
   istiod-ingress:
-    enabled: true
+    enabled: false
     namespace: istio-ingress
     metadata:
       name: istio-ingress
@@ -304,7 +304,7 @@ apps:
       finalizers:
       - resources-finalizer.argocd.argoproj.io
       annotations:
-        argocd.argoproj.io/sync-wave: "1"
+        argocd.argoproj.io/sync-wave: "3"
         argocd.argoproj.io/refresh: always
     project: default
     repoURL: https://istio-release.storage.googleapis.com/charts
@@ -314,21 +314,18 @@ apps:
       releaseName: istio-ingress
       values:
         service:
-          externalTrafficPolicy: Local
+          service:
           type: NodePort
           ports:
           - name: status-port
             port: 15021
-            nodePort: 30003
             protocol: TCP
             targetPort: 15021
           - name: http2
             port: 80
-            nodePort: 30000
             protocol: TCP
             targetPort: 80
           - name: https
-            nodePort: 30001
             port: 443
             protocol: TCP
             targetPort: 443
@@ -359,5 +356,73 @@ apps:
           name: istiod-ingress
 
 
+  metallb:
+    enabled: false
+    namespace: metallb-system
+    metadata:
+      name: metallb
+      namespace: argocd
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "1"
+    project: default
+    repoURL: https://metallb.github.io/metallb
+    chart: metallb
+    targetRevision: 0.14.8
+    helm:
+      releaseName: metallb
+      values:
+        prometheus:
+          scrapeAnnotations: true
+        rbac:
+          create: true
+        speaker:
+          tolerateMaster: true
+          memberlist:
+            enabled: true
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      retry:
+        limit: 10
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 10m
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
 
 
+  gateway-api:
+    enabled: false
+    namespace: gateway-api-system
+    metadata:
+      name: gateway-api
+      namespace: argocd
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "0"
+    project: default
+    repoURL: https://charts.appscode.com/stable/
+    chart: gateway-api
+    targetRevision: 1.0.0
+    helm:
+      releaseName: my-gateway-api
+      values: {}
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      retry:
+        limit: 10
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 10m
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
