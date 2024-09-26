@@ -68,10 +68,11 @@ apps:
       - RespectIgnoreDifferences=true
     extraSpecs:
       ignoreDifferences:
-      - kind: ValidatingWebhookConfiguration
+      - group: "admissionregistration.k8s.io"
+        kind: "ValidatingWebhookConfiguration"
+        name: "istiod-default-validator"
         jsonPointers:
-        - /webhooks/0/failurePolicy
-
+        - "/webhooks/0/failurePolicy"
   istiod:
     enabled: true
     namespace: istio-system
@@ -222,7 +223,7 @@ apps:
           effect: "NoSchedule"
         providers:
           kubernetesGateway:
-            enabled: false
+            enabled: true
           kubernetesCRD:
             ingressClass: traefik
           kubernetesIngress:
@@ -233,10 +234,10 @@ apps:
               namespacePolicy: All
         ingressRoute:
           dashboard:
-            enabled: false
+            enabled: true
         experimental:
           kubernetesGateway:
-            enabled: false
+            enabled: true
     syncPolicy:
       automated:
         selfHeal: true
