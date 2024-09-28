@@ -181,6 +181,14 @@ apps:
         cr:
           create: true
           spec:
+            tracing:
+              enabled: true
+              in_cluster_url: http://jaeger-query.jaeger.svc:80
+              provider: "jaeger"
+              use_grpc: false # Jaeger typically uses HTTP for the query service; set to false unless using gRPC
+              namespace_selector: true
+              query_timeout: 5 # Adjust the timeout as per your preference
+              whitelist_istio_system: ["jaeger-query", "istio-ingressgateway"]
             auth:
               strategy: anonymous
             external_services:
@@ -540,4 +548,145 @@ apps:
       syncOptions:
       - CreateNamespace=true
       - Replace=true
+      - ApplyOutOfSyncOnly=true
+
+  olm:
+    enabled: true
+    namespace: olm
+    metadata:
+      name: olm
+      namespace: argocd
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "0"
+    project: default
+    repoURL: https://github.com/josephaw1022/operator-lifecycle-manager
+    path: deploy/chart
+    targetRevision: HEAD
+    helm:
+      releaseName: olm
+      values: {}
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      retry:
+        limit: 10
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 10m
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - ServerSideApply=true
+      - Replace=true
+      - ApplyOutOfSyncOnly=true
+
+  neuvector-crds:
+    enabled: true
+    namespace: neuvector
+    metadata:
+      name: neuvector-crds
+      namespace: argocd
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "-1"
+    repoURL: https://neuvector.github.io/neuvector-helm
+    chart: crd
+    targetRevision: 2.8.0
+    helm:
+      releaseName: neuvector-crds
+      values: {}
+
+    project: default
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      retry:
+        limit: 6
+        backoff:
+          duration: 15s
+          factor: 2
+          maxDuration: 2m
+      syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - ApplyOutOfSyncOnly=true
+
+      extraManifests:
+      - apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: neuvector
+          labels:
+            istio-injection: "enabled"
+      - apiVersion: coordination.k8s.io/v1
+        kind: Lease
+        metadata:
+          name: neuvector-controller
+          namespace: neuvector
+        spec:
+          leaseTransitions: 0
+      - apiVersion: coordination.k8s.io/v1
+        kind: Lease
+        metadata:
+          name: neuvector-cert-upgrader
+          namespace: neuvector
+        spec:
+          leaseTransitions: 0
+
+  neuvector:
+    enabled: true
+    namespace: neuvector
+    metadata:
+      name: neuvector
+      namespace: argocd
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "3"
+    project: default
+    repoURL: https://neuvector.github.io/neuvector-helm
+    chart: core
+    targetRevision: 2.8.0
+    helm:
+      releaseName: neuvector
+      values:
+        crdwebhook:
+          enabled: false
+
+        manager:
+          svc:
+            type: ClusterIP
+
+        controller:
+          replicas: 1
+
+        enforcer:
+          enabled: false
+
+        containerd:
+          enabled: true
+
+        cve:
+          scanner:
+            replicas: 1
+
+    syncPolicy:
+      automated:
+        prune: false
+        selfHeal: true
+      retry:
+        limit: 10
+        backoff:
+          duration: 2m
+          factor: 2
+          maxDuration: 10m
+      syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
       - ApplyOutOfSyncOnly=true
