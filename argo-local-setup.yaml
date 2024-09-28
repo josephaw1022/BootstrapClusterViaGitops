@@ -4,3 +4,8 @@ server:
     type: NodePort
     nodePortHttp: 30080
     nodePortHttps: 30443
+
+configs:
+  secret:
+    # The password is 'admin' for the argocd-server-admin secret
+    argocdServerAdminPassword: $2a$10$8oMaaRD4E0zpuoQ9TaF/.eDyS9iGhqhpr6q6vJL3qytskO2KkoIL6

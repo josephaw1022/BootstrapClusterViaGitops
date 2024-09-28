@@ -16,7 +16,7 @@ apps:
       finalizers:
       - resources-finalizer.argocd.argoproj.io
       annotations:
-        argocd.argoproj.io/sync-wave: "0"
+        argocd.argoproj.io/sync-wave: "1"
         argocd.argoproj.io/refresh: always
     project: default
     repoURL: https://charts.jetstack.io
@@ -50,7 +50,7 @@ apps:
       finalizers:
       - resources-finalizer.argocd.argoproj.io
       annotations:
-        argocd.argoproj.io/sync-wave: "1"
+        argocd.argoproj.io/sync-wave: "-1"
         argocd.argoproj.io/refresh: always
     project: default
     repoURL: https://istio-release.storage.googleapis.com/charts
@@ -91,7 +91,7 @@ apps:
       finalizers:
       - resources-finalizer.argocd.argoproj.io
       annotations:
-        argocd.argoproj.io/sync-wave: "2"
+        argocd.argoproj.io/sync-wave: "0"
         argocd.argoproj.io/refresh: always
     project: default
     repoURL: https://istio-release.storage.googleapis.com/charts
@@ -220,7 +220,7 @@ apps:
       name: traefik
       namespace: argocd
       annotations:
-        argocd.argoproj.io/sync-wave: "0"
+        argocd.argoproj.io/sync-wave: "3"
         argocd.argoproj.io/refresh: always
     project: default
     repoURL: https://traefik.github.io/charts
@@ -256,6 +256,7 @@ apps:
         ingressRoute:
           dashboard:
             enabled: true
+            entryPoint: ["traefik", "websecure", "web"]
         experimental:
           kubernetesGateway:
             enabled: true
@@ -289,7 +290,7 @@ apps:
       finalizers:
       - resources-finalizer.argocd.argoproj.io
       annotations:
-        argocd.argoproj.io/sync-wave: "2"
+        argocd.argoproj.io/sync-wave: "3"
         argocd.argoproj.io/refresh: always
     project: default
     repoURL: https://helm-charts.komodor.io
@@ -462,7 +463,7 @@ apps:
       finalizers:
       - resources-finalizer.argocd.argoproj.io
       annotations:
-        argocd.argoproj.io/sync-wave: "1"
+        argocd.argoproj.io/sync-wave: "4"
     project: default
     repoURL: https://prometheus-community.github.io/helm-charts
     chart: kube-prometheus-stack
