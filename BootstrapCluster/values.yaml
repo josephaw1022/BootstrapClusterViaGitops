@@ -1,0 +1,713 @@
+apps:
+  cert-manager:
+    enabled: true
+    extraManifests:
+    - apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: cert-manager
+        labels:
+          istio-injection: "enabled"
+
+    namespace: cert-manager
+    metadata:
+      name: cert-manager
+      namespace: argocd
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "1"
+        argocd.argoproj.io/refresh: always
+    project: default
+    repoURL: https://charts.jetstack.io
+    chart: cert-manager
+    targetRevision: v1.15.3
+    helm:
+      releaseName: cert-manager
+      values:
+        crds:
+          enabled: true
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      retry:
+        limit: 10
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 1m
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+
+  istio-system:
+    enabled: true
+    namespace: istio-system
+    metadata:
+      name: istio-base
+      namespace: argocd
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "-1"
+        argocd.argoproj.io/refresh: always
+    project: default
+    repoURL: https://istio-release.storage.googleapis.com/charts
+    chart: base
+    targetRevision: 1.23.2
+    helm:
+      releaseName: istio-base
+      values:
+        defaultRevision: default
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: false
+      retry:
+        limit: 10
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 10m
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - RespectIgnoreDifferences=true
+    extraSpecs:
+      ignoreDifferences:
+      - group: "admissionregistration.k8s.io"
+        kind: "ValidatingWebhookConfiguration"
+        name: "istiod-default-validator"
+        jsonPointers:
+        - "/webhooks/0/failurePolicy"
+
+  istiod:
+    enabled: true
+    namespace: istio-system
+    metadata:
+      name: istiod
+      namespace: argocd
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "0"
+        argocd.argoproj.io/refresh: always
+    project: default
+    repoURL: https://istio-release.storage.googleapis.com/charts
+    chart: istiod
+    targetRevision: 1.23.2
+    helm:
+      releaseName: istiod
+      values: ""
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - ApplyOutOfSyncOnly=true
+    extraSpecs:
+      ignoreDifferences:
+      - group: "admissionregistration.k8s.io"
+        kind: "ValidatingWebhookConfiguration"
+        name: "istio-validator-istio-system"
+        jsonPointers:
+        - "/webhooks/0/failurePolicy"
+
+  jaeger:
+    enabled: true
+    namespace: jaeger
+    metadata:
+      name: jaeger
+      namespace: argocd
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "3"
+        argocd.argoproj.io/refresh: always
+    project: default
+    repoURL: https://jaegertracing.github.io/helm-charts
+    chart: jaeger
+    targetRevision: 3.3.1
+    helm:
+      releaseName: jaeger
+      values:
+        provisionDataStore:
+          cassandra: false
+        allInOne:
+          enabled: true
+        storage:
+          type: memory
+        agent:
+          enabled: false
+        collector:
+          enabled: true
+        query:
+          enabled: true
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      retry:
+        limit: 10
+        backoff:
+          duration: 10s
+          factor: 2
+          maxDuration: 3m
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+
+  kiali-operator:
+    enabled: true
+    namespace: istio-system
+    metadata:
+      name: kiali-operator
+      namespace: argocd
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "3"
+        argocd.argoproj.io/refresh: always
+    project: default
+    repoURL: https://kiali.org/helm-charts
+    chart: kiali-operator
+    targetRevision: 1.89.3
+    helm:
+      releaseName: kiali-operator
+      values:
+        cr:
+          create: true
+          spec:
+            tracing:
+              enabled: true
+              in_cluster_url: http://jaeger-query.jaeger.svc:80
+              provider: "jaeger"
+              use_grpc: false # Jaeger typically uses HTTP for the query service; set to false unless using gRPC
+              namespace_selector: true
+              query_timeout: 5 # Adjust the timeout as per your preference
+              whitelist_istio_system: ["jaeger-query", "istio-ingressgateway"]
+            auth:
+              strategy: anonymous
+            external_services:
+              prometheus:
+                url: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+              grafana:
+                enabled: true
+                url: http://kube-prometheus-stack-grafana.monitoring.svc:80
+    extraManifests:
+    - apiVersion: gateway.networking.k8s.io/v1
+      kind: HTTPRoute
+      metadata:
+        name: kiali-route
+        namespace: istio-system
+      spec:
+        parentRefs:
+        - name: traefik-gateway
+          namespace: traefik
+        hostnames:
+        - "kiali.localhost"
+        rules:
+        - matches:
+          - path:
+              type: PathPrefix
+              value: "/"
+          backendRefs:
+          - name: kiali
+            port: 20001
+
+
+
+
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      retry:
+        limit: 10
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 5m
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+
+  traefik:
+    enabled: true
+    extraManifests:
+    - apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: traefik
+        labels:
+          istio-injection: "enabled"
+    namespace: traefik
+    metadata:
+      name: traefik
+      namespace: argocd
+      annotations:
+        argocd.argoproj.io/sync-wave: "3"
+        argocd.argoproj.io/refresh: always
+    project: default
+    repoURL: https://traefik.github.io/charts
+    chart: traefik
+    targetRevision: 31.1.1
+    helm:
+      releaseName: traefik
+      values:
+        service:
+          type: NodePort
+        ports:
+          web:
+            nodePort: 30000
+          websecure:
+            nodePort: 30001
+        nodeSelector:
+          ingress-ready: "true"
+        tolerations:
+        - key: "node-role.kubernetes.io/master"
+          operator: "Equal"
+          effect: "NoSchedule"
+        providers:
+          kubernetesGateway:
+            enabled: true
+          kubernetesCRD:
+            ingressClass: traefik
+          kubernetesIngress:
+            ingressClass: traefik
+        gateway:
+          listeners:
+            web:
+              namespacePolicy: All
+        ingressRoute:
+          dashboard:
+            enabled: true
+            entryPoint: ["traefik", "websecure", "web"]
+        experimental:
+          kubernetesGateway:
+            enabled: true
+    syncPolicy:
+      automated:
+        selfHeal: true
+        prune: true
+      retry:
+        limit: 20
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 3m
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+
+  helm-dashboard:
+    enabled: true
+    namespace: helm-dashboard
+    extraManifests:
+    - apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: helm-dashboard
+        labels:
+          istio-injection: "enabled"
+    metadata:
+      name: helm-dashboard
+      namespace: argocd
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "3"
+        argocd.argoproj.io/refresh: always
+    project: default
+    repoURL: https://helm-charts.komodor.io
+    chart: helm-dashboard
+    targetRevision: 0.1.10
+    helm:
+      releaseName: helm-dashboard
+      values:
+        ingress:
+          enabled: true
+          className: traefik
+          hosts:
+          - host: helm-dashboard.localhost
+            paths:
+            - path: /
+              pathType: Prefix
+        service:
+          type: ClusterIP
+          port: 80
+    syncPolicy:
+      automated:
+        selfHeal: true
+        prune: true
+      retry:
+        limit: 20
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 3m
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+
+  istiod-ingress:
+    enabled: false
+    namespace: istio-ingress
+    metadata:
+      name: istio-ingress
+      namespace: argocd
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "3"
+        argocd.argoproj.io/refresh: always
+    project: default
+    repoURL: https://istio-release.storage.googleapis.com/charts
+    chart: gateway
+    targetRevision: 1.23.2
+    helm:
+      releaseName: istio-ingress
+      values:
+        service:
+          service:
+          type: NodePort
+          ports:
+          - name: status-port
+            port: 15021
+            protocol: TCP
+            targetPort: 15021
+          - name: http2
+            port: 80
+            protocol: TCP
+            targetPort: 80
+          - name: https
+            port: 443
+            protocol: TCP
+            targetPort: 443
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+        allowEmpty: true
+      retry:
+        limit: 2
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 30s
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=orphan
+      - ApplyOutOfSyncOnly=false
+      - Replace=true
+      managedNamespaceMetadata:
+        labels:
+          istio-injection: enabled
+    extraSpecs:
+      orphanedResources:
+        warn: false
+        ignore:
+        - kind: Deployment
+          name: istiod-ingress
+
+  metallb:
+    enabled: false
+    namespace: metallb-system
+    metadata:
+      name: metallb
+      namespace: argocd
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "1"
+    project: default
+    repoURL: https://metallb.github.io/metallb
+    chart: metallb
+    targetRevision: 0.14.8
+    helm:
+      releaseName: metallb
+      values:
+        prometheus:
+          scrapeAnnotations: true
+        rbac:
+          create: true
+        speaker:
+          tolerateMaster: true
+          memberlist:
+            enabled: true
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      retry:
+        limit: 10
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 10m
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+
+  gateway-api:
+    enabled: false
+    namespace: gateway-api-system
+    metadata:
+      name: gateway-api
+      namespace: argocd
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "0"
+    project: default
+    repoURL: https://charts.appscode.com/stable/
+    chart: gateway-api
+    targetRevision: 1.0.0
+    helm:
+      releaseName: my-gateway-api
+      values: {}
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      retry:
+        limit: 10
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 10m
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+
+  kube-prometheus-stack:
+    enabled: true
+    namespace: monitoring
+    metadata:
+      name: kube-prometheus-stack
+      namespace: argocd
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "4"
+    project: default
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: 62.7.0
+    helm:
+      releaseName: kube-prometheus-stack
+      skipCrds: true
+      values:
+        grafana:
+          enabled: true
+
+          ingress:
+            enabled: true
+            className: traefik
+            annotations:
+              traefik.ingress.kubernetes.io/router.entrypoints: web
+            hosts:
+            - "grafana.localhost"
+
+        additionalScrapeConfigs:
+        - job_name: prometheus
+          static_configs:
+          - targets:
+            - localhost:9090
+        - job_name: 'istiod'
+          # Scrape Istiod stats from istio-system namespace
+          kubernetes_sd_configs:
+          - role: endpoints
+            namespaces:
+              names:
+              - istio-system
+          relabel_configs:
+          - source_labels: [__meta_kubernetes_service_name, __meta_kubernetes_endpoint_port_name]
+            action: keep
+            regex: istiod;http-monitoring
+        - job_name: 'envoy-stats'
+          # Scrape Envoy stats from sidecar and gateway proxies
+          metrics_path: /stats/prometheus
+          kubernetes_sd_configs:
+          - role: pod
+          relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_container_port_name]
+            action: keep
+            regex: '.*-envoy-prom'
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      syncOptions:
+      - ApplyOutOfSyncOnly=true
+      - CreateNamespace=true
+      - ServerSideApply=true
+
+  kube-prometheus-stack-crds:
+    enabled: true
+    namespace: monitoring
+    metadata:
+      name: kube-prometheus-stack-crds
+      namespace: argocd
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "0"
+    project: default
+    repoURL: https://github.com/prometheus-community/helm-charts.git
+    path: charts/kube-prometheus-stack/charts/crds
+    targetRevision: HEAD
+    helm:
+      releaseName: kube-prometheus-stack-crds
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      syncOptions:
+      - CreateNamespace=true
+      - Replace=true
+      - ApplyOutOfSyncOnly=true
+
+  olm:
+    enabled: true
+    namespace: olm
+    metadata:
+      name: olm
+      namespace: argocd
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "0"
+    project: default
+    repoURL: https://github.com/josephaw1022/operator-lifecycle-manager
+    path: deploy/chart
+    targetRevision: HEAD
+    helm:
+      releaseName: olm
+      values: {}
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      retry:
+        limit: 10
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 10m
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - ServerSideApply=true
+      - Replace=true
+      - ApplyOutOfSyncOnly=true
+
+  neuvector-crds:
+    enabled: true
+    namespace: neuvector
+    metadata:
+      name: neuvector-crds
+      namespace: argocd
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "-1"
+    repoURL: https://neuvector.github.io/neuvector-helm
+    chart: crd
+    targetRevision: 2.8.0
+    helm:
+      releaseName: neuvector-crds
+      values: {}
+
+    project: default
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      retry:
+        limit: 6
+        backoff:
+          duration: 15s
+          factor: 2
+          maxDuration: 2m
+      syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - ApplyOutOfSyncOnly=true
+
+      extraManifests:
+      - apiVersion: v1
+        kind: Namespace
+        metadata:
+          name: neuvector
+          labels:
+            istio-injection: "enabled"
+      - apiVersion: coordination.k8s.io/v1
+        kind: Lease
+        metadata:
+          name: neuvector-controller
+          namespace: neuvector
+        spec:
+          leaseTransitions: 0
+      - apiVersion: coordination.k8s.io/v1
+        kind: Lease
+        metadata:
+          name: neuvector-cert-upgrader
+          namespace: neuvector
+        spec:
+          leaseTransitions: 0
+
+  neuvector:
+    enabled: true
+    namespace: neuvector
+    metadata:
+      name: neuvector
+      namespace: argocd
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "3"
+    project: default
+    repoURL: https://neuvector.github.io/neuvector-helm
+    chart: core
+    targetRevision: 2.8.0
+    helm:
+      releaseName: neuvector
+      values:
+        crdwebhook:
+          enabled: false
+
+        manager:
+          svc:
+            type: ClusterIP
+
+        controller:
+          replicas: 1
+
+        enforcer:
+          enabled: false
+
+        containerd:
+          enabled: true
+
+        cve:
+          scanner:
+            replicas: 1
+
+    syncPolicy:
+      automated:
+        prune: false
+        selfHeal: true
+      retry:
+        limit: 10
+        backoff:
+          duration: 2m
+          factor: 2
+          maxDuration: 10m
+      syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - ApplyOutOfSyncOnly=true
