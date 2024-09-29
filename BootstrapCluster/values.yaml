@@ -197,6 +197,27 @@ apps:
               grafana:
                 enabled: true
                 url: http://kube-prometheus-stack-grafana.monitoring.svc:80
+    extraManifests:
+    - apiVersion: gateway.networking.k8s.io/v1
+      kind: HTTPRoute
+      metadata:
+        name: kiali-route
+        namespace: istio-system
+      spec:
+        parentRefs:
+        - name: traefik-gateway
+          namespace: traefik
+        hostnames:
+        - "kiali.localhost"
+        rules:
+        - matches:
+          - path:
+              type: PathPrefix
+              value: "/"
+          backendRefs:
+          - name: kiali
+            port: 20001
+
 
 
 
