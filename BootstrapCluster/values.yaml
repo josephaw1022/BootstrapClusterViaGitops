@@ -1,6 +1,6 @@
 apps:
   cert-manager:
-    enabled: true
+    enabled: false
     extraManifests:
     - apiVersion: v1
       kind: Namespace
@@ -42,7 +42,7 @@ apps:
       - PrunePropagationPolicy=foreground
 
   istio-system:
-    enabled: true
+    enabled: false
     namespace: istio-system
     metadata:
       name: istio-base
@@ -83,7 +83,7 @@ apps:
         - "/webhooks/0/failurePolicy"
 
   istiod:
-    enabled: true
+    enabled: false
     namespace: istio-system
     metadata:
       name: istiod
@@ -117,7 +117,7 @@ apps:
         - "/webhooks/0/failurePolicy"
 
   jaeger:
-    enabled: true
+    enabled: false
     namespace: jaeger
     metadata:
       name: jaeger
@@ -161,7 +161,7 @@ apps:
       - PrunePropagationPolicy=foreground
 
   kiali-operator:
-    enabled: true
+    enabled: false
     namespace: istio-system
     metadata:
       name: kiali-operator
@@ -236,7 +236,7 @@ apps:
       - PrunePropagationPolicy=foreground
 
   traefik:
-    enabled: true
+    enabled: false
     extraManifests:
     - apiVersion: v1
       kind: Namespace
@@ -484,7 +484,7 @@ apps:
       - PrunePropagationPolicy=foreground
 
   kube-prometheus-stack:
-    enabled: true
+    enabled: false
     namespace: monitoring
     metadata:
       name: kube-prometheus-stack
@@ -572,7 +572,7 @@ apps:
       - ApplyOutOfSyncOnly=true
 
   olm:
-    enabled: true
+    enabled: false
     namespace: olm
     metadata:
       name: olm
@@ -606,7 +606,7 @@ apps:
       - ApplyOutOfSyncOnly=true
 
   neuvector-crds:
-    enabled: true
+    enabled: false
     namespace: neuvector
     metadata:
       name: neuvector-crds
@@ -661,7 +661,7 @@ apps:
           leaseTransitions: 0
 
   neuvector:
-    enabled: true
+    enabled: false
     namespace: neuvector
     metadata:
       name: neuvector
@@ -711,3 +711,41 @@ apps:
       - CreateNamespace=true
       - ServerSideApply=true
       - ApplyOutOfSyncOnly=true
+
+
+
+  awx:
+    enabled: true
+    namespace: awx
+    metadata:
+      name: awx-operator
+      namespace: argocd
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "2"
+        argocd.argoproj.io/refresh: always
+    project: default
+    repoURL: https://ansible-community.github.io/awx-operator-helm
+    chart: awx-operator
+    targetRevision: 2.19.0
+    helm:
+      releaseName: my-awx-operator
+      values:
+        AWX:
+          enabled: true
+          spec:
+            security_context_settings: {}
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      retry:
+        limit: 10
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 1m
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
