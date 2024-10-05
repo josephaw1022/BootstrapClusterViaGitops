@@ -1,6 +1,6 @@
 apps:
   cert-manager:
-    enabled: false
+    enabled: true
     extraManifests:
     - apiVersion: v1
       kind: Namespace
@@ -319,7 +319,7 @@ apps:
       finalizers:
       - resources-finalizer.argocd.argoproj.io
       annotations:
-        argocd.argoproj.io/sync-wave: "3"
+        argocd.argoproj.io/sync-wave: "3000"
         argocd.argoproj.io/refresh: always
     project: default
     repoURL: https://helm-charts.komodor.io
@@ -736,6 +736,42 @@ apps:
           enabled: true
           spec:
             security_context_settings: {}
+    syncPolicy:
+      automated:
+        prune: true
+        selfHeal: true
+      retry:
+        limit: 10
+        backoff:
+          duration: 5s
+          factor: 2
+          maxDuration: 1m
+      syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+
+  rancher:
+    enabled: true
+    namespace: cattle-system
+    metadata:
+      name: rancher
+      namespace: argocd
+      finalizers:
+      - resources-finalizer.argocd.argoproj.io
+      annotations:
+        argocd.argoproj.io/sync-wave: "4"
+        argocd.argoproj.io/refresh: always
+    project: default
+    repoURL: https://releases.rancher.com/server-charts/latest
+    chart: rancher
+    targetRevision: 2.9.2
+    helm:
+      releaseName: rancher
+      values:
+        hostname: rancher.localhost
+        ingress:
+          enabled: true
+        bootstrapPassword: "admin"
     syncPolicy:
       automated:
         prune: true
