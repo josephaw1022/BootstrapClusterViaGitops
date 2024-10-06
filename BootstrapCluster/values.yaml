@@ -236,7 +236,7 @@ apps:
       - PrunePropagationPolicy=foreground
 
   traefik:
-    enabled: false
+    enabled: true
     extraManifests:
     - apiVersion: v1
       kind: Namespace
