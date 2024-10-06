@@ -771,7 +771,6 @@ apps:
         hostname: rancher.localhost
         ingress:
           enabled: true
-        bootstrapPassword: "admin"
     syncPolicy:
       automated:
         prune: true
