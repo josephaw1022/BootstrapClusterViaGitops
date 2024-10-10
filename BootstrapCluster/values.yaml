@@ -484,7 +484,7 @@ apps:
       - PrunePropagationPolicy=foreground
 
   kube-prometheus-stack:
-    enabled: false
+    enabled: true
     namespace: monitoring
     metadata:
       name: kube-prometheus-stack
@@ -749,7 +749,26 @@ apps:
       syncOptions:
       - CreateNamespace=true
       - PrunePropagationPolicy=foreground
-
+    extraManifests:
+    - apiVersion: gateway.networking.k8s.io/v1
+      kind: HTTPRoute
+      metadata:
+        name: awx-route
+        namespace: awx
+      spec:
+        parentRefs:
+        - name: traefik-gateway
+          namespace: traefik
+        hostnames:
+        - "awx.localhost"
+        rules:
+        - matches:
+          - path:
+              type: PathPrefix
+              value: "/"
+          backendRefs:
+          - name: awx-service
+            port: 80
   rancher:
     enabled: true
     namespace: cattle-system
@@ -771,6 +790,9 @@ apps:
         hostname: rancher.localhost
         ingress:
           enabled: true
+          includeDefaultExtraAnnotations: false
+          ingressClassName: traefik
+
     syncPolicy:
       automated:
         prune: true
